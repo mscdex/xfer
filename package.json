@@ -1,0 +1,10 @@
+{ "name": "xfer",
+  "version": "0.0.1",
+  "author": "Brian White <mscdex@mscdex.net>",
+  "description": "Simple binary TLV transport",
+  "main": "./xfer",
+  "engines": { "node" : ">=0.4.0" },
+  "keywords": [ "binary", "transfer", "tlv" ],
+  "licenses": [ { "type": "MIT", "url": "http://github.com/mscdex/xfer/raw/master/LICENSE" } ],
+  "repository" : { "type": "git", "url": "http://github.com/mscdex/xfer.git" }
+}
