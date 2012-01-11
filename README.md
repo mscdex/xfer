@@ -25,9 +25,7 @@ Example
           client.xfer.write(0x20, 'My cool little message! :-)');
           client.xfer.write(0x01, new Buffer([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]));
         });
-        server.listen(8118);
-
-        process.nextTick(function() {
+        server.listen(8118, function() {
           var client = net.createConnection(8118);
           client.xfer = new Xfer(TYPE_SIZE, LEN_SIZE, client);
           client.xfer.on(0x20, function(data) {
