@@ -2,6 +2,9 @@ var STATE_NEED_TYPE = 0,
     STATE_NEED_LEN = 1,
     STATE_DATA = 2;
 
+var inherits = require('util').inherits,
+    EventEmitter = require('events').EventEmitter;
+
 var Xfer = module.exports = function(typeLen, sizeLen, stream) {
   var self = this,
       state = STATE_NEED_TYPE,
@@ -47,7 +50,7 @@ var Xfer = module.exports = function(typeLen, sizeLen, stream) {
         state = STATE_DATA;
     }
     if (state === STATE_DATA && i < dataLen) {
-      // packet data
+      // message data
       dataLen -= i;
       if (!buffer)
         buffer = new Buffer(len);
@@ -60,6 +63,7 @@ var Xfer = module.exports = function(typeLen, sizeLen, stream) {
         type = undefined;
         nType = 0;
         self.emit(actualType, buffer);
+        self.emit('message', actualType, buffer);
       }
       if (numBytes !== dataLen) {
         // extra data in the pipeline
@@ -68,7 +72,7 @@ var Xfer = module.exports = function(typeLen, sizeLen, stream) {
     }
   });
 };
-require('util').inherits(Xfer, require('events').EventEmitter);
+inherits(Xfer, EventEmitter);
 
 Xfer.prototype.write = function(type, data) {
   if (data && data.length > this.maxPayloadSize)
@@ -76,7 +80,7 @@ Xfer.prototype.write = function(type, data) {
   else if (!this.stream.writable)
     throw new Error('Cannot write data: stream is no longer writable');
   else if (typeof type !== 'number' || type < 0 || type > this.maxType)
-    throw new Error('Packet type must be a number between 0 and ' + this.maxType);
+    throw new Error('Message type must be a number between 0 and ' + this.maxType);
 
   var len = 0, outBuf, p = this.typeBytes;
 
