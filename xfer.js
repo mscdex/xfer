@@ -71,26 +71,28 @@ var Xfer = module.exports = function(typeLen, sizeLen, stream) {
 require('util').inherits(Xfer, require('events').EventEmitter);
 
 Xfer.prototype.write = function(type, data) {
-  if (data && data.length > this.maxPayloadSize)
+  var len = 0, outBuf, p = this.typeBytes;
+
+  if (data)
+    len = (Buffer.isBuffer(data) ? data.length : Buffer.byteLength(data));
+
+  if (data && len > this.maxPayloadSize)
     throw new Error('Cannot write data (' + data.length + ' bytes) larger than max allowed size of ' + this.maxPayloadSize + ' bytes');
   else if (!this.stream.writable)
     throw new Error('Cannot write data: stream is no longer writable');
   else if (typeof type !== 'number' || type < 0 || type > this.maxType)
     throw new Error('Packet type must be a number between 0 and ' + this.maxType);
 
-  var len = 0, outBuf, p = this.typeBytes;
-
-  if (data)
-    len = (Buffer.isBuffer(data) ? data.length : Buffer.byteLength(data));
   outBuf = new Buffer(this.typeBytes + this.sizeBytes + len);
 
   outBuf[this.typeBytes - 1] = type & 0xFF;
   for (var i = 1; i < this.typeBytes; ++i)
-    outBuf[this.typeBytes - 1 - i] = Math.floor(type / (i * 256)) & 0xFF;
+    outBuf[this.typeBytes - 1 - i] = Math.floor(type / Math.pow(256, i)) & 0xFF;
 
   outBuf[p + (this.sizeBytes - 1)] = len & 0xFF;
-  for (var i = 1; i < this.sizeBytes; ++i)
-    outBuf[p + (this.sizeBytes - 1 - i)] = Math.floor(len / (i * 256)) & 0xFF;
+  for (var i = 1; i < this.sizeBytes; ++i) {
+    outBuf[p + (this.sizeBytes - 1 - i)] = Math.floor(len / Math.pow(256, i)) & 0xFF;
+  }
 
   p += this.sizeBytes;
 
