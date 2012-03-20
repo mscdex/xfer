@@ -21,6 +21,8 @@ var Xfer = module.exports = function(cfg) {
   cfg = cfg || {};
   if (!cfg.stream)
     throw new Error("No stream specified");
+  if (cfg.buffer === undefined)
+    cfg.buffer = true;
   var self = this,
       state = STATE_NEED_TYPE,
       type = undefined,
