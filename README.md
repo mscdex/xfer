@@ -52,7 +52,7 @@ Example
         source.setEncoding('ascii');
         console.error('Got streaming message 0x20 (' + len + ' bytes)');
         source.on('data', function(data) {
-          console.error('Message 0x20 chunk: ' + data);
+          console.error('Message 0x20 chunk (' + Buffer.byteLength(data) + ' bytes): ' + data);
         });
         source.on('end', function() {
           console.error('End of message 0x20');
@@ -67,7 +67,7 @@ Example
       } else {
         console.error('Got streaming message 0x01 (' + len + ' bytes)');
         source.on('data', function(data) {
-          console.error('Message 0x01 chunk: ' + inspect(data));
+          console.error('Message 0x01 chunk (' + data.length + ' bytes): ' + inspect(data));
         });
         source.on('end', function() {
           console.error('End of message 0x01');
