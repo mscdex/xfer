@@ -94,9 +94,8 @@ Xfer.prototype.write = function(type, data) {
     outBuf[this.typeBytes - 1 - i] = Math.floor(type / Math.pow(256, i)) & 0xFF;
 
   outBuf[p + (this.sizeBytes - 1)] = len & 0xFF;
-  for (var i = 1; i < this.sizeBytes; ++i) {
+  for (var i = 1; i < this.sizeBytes; ++i)
     outBuf[p + (this.sizeBytes - 1 - i)] = Math.floor(len / Math.pow(256, i)) & 0xFF;
-  }
 
   p += this.sizeBytes;
 
