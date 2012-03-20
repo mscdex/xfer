@@ -14,7 +14,7 @@ Requirements
 
 Example
 =======
-
+```javascript
         var net = require('net'), inspect = require('util').inspect,
             Xfer = require('xfer');
 
@@ -120,3 +120,4 @@ Example
               13 14 15 16 17 18 19 ...>
               End of message 0x01
         */
+```
