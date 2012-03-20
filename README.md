@@ -83,6 +83,7 @@ Example
         Got buffered message 0x01 (300000 bytes): <Buffer 00 01 02 03 04 05 06 07 08 09
         0a 0b 0c 0d 0e 0f 10 11 12 13 14 15 16 17 18 19 1a 1b 1c 1d 1e 1f 20 21 22 23 24
         25 26 27 28 29 2a 2b 2c 2d 2e 2f 30 31 32 ...>
+
     example output with buffering disabled:
         Got message 0x20 (27 bytes)
         Message 0x20 chunk (27 bytes): My cool little message! :-)
@@ -118,3 +119,35 @@ Example
         End of message 0x01
   */
 ```
+
+
+API
+===
+
+Events
+------
+
+Two types of events are emitted from an Xfer instance: integer events and a special "catch-all" event.
+
+ * Integer events represent incoming TLV tuples where the integer is the type
+
+ * A 'message' event is emitted for every incoming TLV tuple
+
+Integer events are passed two values (*\<Buffer/Stream\>* source, *\<Integer\>* size) and the 'message' event is passed an additional argument (*\<Integer\>* type) before the source and size arguments. The source argument is a (readable only) stream only if 'buffer' was set to `false` in the configuration object passed to the constructor. The size value refers to the total size of the data in the source.
+
+Methods
+-------
+
+ * *constructor* (*\<Object\>* config) - Available configuration properties include:
+
+    * *\<Integer\>* typeLen - The number of bytes to use for the type field (default: 1)
+
+    * *\<Integer\>* sizeLen - The number of bytes to use for the size/length field (default: 2)
+
+    * *\<Stream\>* stream - A Stream object to use for reading/writing TLV data from/to
+
+    * *\<Boolean\>* writeOnly - Do not interpret incoming data on the stream as TLV data (default: false)
+
+    * *\<Boolean\>* buffer - Buffer incoming value data? (default: true)
+
+ * **write** (*\<Integer\>* type, *\<Buffer/String\>* data) - Writes the given information as a TLV tuple to the stream
