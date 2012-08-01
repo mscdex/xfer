@@ -153,4 +153,8 @@ Methods
 
     * *\<Boolean\>* buffer - Buffer incoming value data? (default: true)
 
- * **write** (*\<Integer\>* type, *\<Buffer/String\>* data) - Writes the given information as a TLV tuple to the stream
+ * **write** (*\<Integer\>* type, *\<Buffer/String\>* data) - (_void_) - Writes the given information as a TLV tuple to the stream
+
+ * **pause** () - (_void_) - Pauses the underlying stream
+ 
+ * **resume** () - (_void_) - Resumes the underlying stream

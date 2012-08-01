@@ -6,15 +6,26 @@ var inherits = require('util').inherits,
     EventEmitter = require('events').EventEmitter,
     Stream = require('stream');
 
-function ValueStream() {
+function ValueStream(stream) {
   this.readable = true;
+  this._stream = stream;
 }
 inherits(ValueStream, Stream);
+
 ValueStream.prototype.setEncoding = function(encoding) {
   this.encoding = encoding;
 };
+
 ValueStream.prototype.end = ValueStream.prototype.close = function() {
   this.readable = false;
+};
+
+ValueStream.prototype.pause = function() {
+  this._stream.pause();
+};
+
+ValueStream.prototype.resume = function() {
+  this._stream.resume();
 };
 
 var Xfer = module.exports = function(cfg) {
@@ -140,4 +151,12 @@ Xfer.prototype.write = function(type, data) {
   if (len)
     (Buffer.isBuffer(data) ? data : new Buffer(data)).copy(outBuf, p);
   this.stream.write(outBuf);
+};
+
+Xfer.prototype.pause = function() {
+  this.stream.pause();
+};
+
+Xfer.prototype.resume = function() {
+  this.stream.resume();
 };
