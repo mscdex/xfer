@@ -90,7 +90,7 @@ var Xfer = module.exports = function(cfg) {
           data.copy(source, recvd, i, i + numBytes);
         else {
           if (recvd === 0) {
-            source = new ValueStream();
+            source = new ValueStream(self.stream);
             self.emit(type, source, len);
             self.emit('message', type, source, len);
           }
