@@ -18,8 +18,8 @@ Example
   var net = require('net'), inspect = require('util').inspect,
       Xfer = require('xfer');
 
-  var TYPE_LEN = 1, // in bytes, 0 to 255
-      SIZE_LEN = 4, // in bytes, 4 bytes == maximum payload size is 4,294,967,295 bytes
+  var TYPE_LEN = 1, // in bytes, (1 byte allows 0 to 255)
+      SIZE_LEN = 4, // in bytes, (4 bytes allows 0 to 4,294,967,295 byte payload)
       BUFFERING = true;
 
   var server = net.createServer(function(client) {
