@@ -36,12 +36,12 @@ var Xfer = module.exports = function(cfg) {
     cfg.buffer = true;
   var self = this,
       state = STATE_NEED_TYPE,
-      type = undefined,
+      type,
       nType = 0,
-      len = undefined,
+      len,
       nLen = 0,
       recvd = 0,
-      source = undefined;
+      source;
   this.stream = cfg.stream;
   this.isStreaming = !cfg.buffer;
   this.isWriteOnly = cfg.writeOnly;
