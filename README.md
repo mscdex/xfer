@@ -136,25 +136,25 @@ Two types of events are emitted from an Xfer instance: integer events and a spec
 
  * A 'message' event is emitted for every incoming TLV tuple
 
-Integer events are passed two values (*\<Buffer/Stream\>* source, *\<Integer\>* size) and the 'message' event is passed an additional argument (*\<Integer\>* type) before the source and size arguments. The source argument is a (readable only) stream only if 'buffer' was set to `false` in the configuration object passed to the constructor. The size value refers to the total size of the data in the source.
+Integer events are passed two values (< _Buffer/Stream_ > source, < _integer_ > size) and the 'message' event is passed an additional argument (< _integer_ > type) before the source and size arguments. The source argument is a (readable only) stream only if 'buffer' was set to `false` in the configuration object passed to the constructor. The size value refers to the total size of the data in the source.
 
 Methods
 -------
 
- * *constructor* (*\<Object\>* config) - Available configuration properties include:
+ * *constructor* (< _object_ > config) - Available configuration properties include:
 
-    * *\<Integer\>* typeLen - The number of bytes to use for the type field (default: 1)
+    * < _integer_ > typeLen - The number of bytes to use for the type field (default: 1)
 
-    * *\<Integer\>* sizeLen - The number of bytes to use for the size/length field (default: 2)
+    * < _integer_ > sizeLen - The number of bytes to use for the size/length field (default: 2)
 
-    * *\<Stream\>* stream - A Stream object to use for reading/writing TLV data from/to
+    * < _Stream_ > stream - A Stream object to use for reading/writing TLV data from/to
 
-    * *\<Boolean\>* writeOnly - Do not interpret incoming data on the stream as TLV data (default: false)
+    * < _boolean_ > writeOnly - Do not interpret incoming data on the stream as TLV data (default: false)
 
-    * *\<Boolean\>* buffer - Buffer incoming value data? (default: true)
+    * < _boolean_ > buffer - Buffer incoming value data? (default: true)
 
- * **write** (*\<Integer\>* type, *\<Buffer/String\>* data) - (_void_) - Writes the given information as a TLV tuple to the stream
+ * **write** (< _integer_ > type, < _Buffer/string_ > data) - ( _void_ ) - Writes the given information as a TLV tuple to the stream
 
- * **pause** () - (_void_) - Pauses the underlying stream
+ * **pause** () - ( _void_ ) - Pauses the underlying stream
  
- * **resume** () - (_void_) - Resumes the underlying stream
+ * **resume** () - ( _void_ ) - Resumes the underlying stream
