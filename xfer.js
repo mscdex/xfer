@@ -67,8 +67,8 @@ Protocol.prototype.send = function(type, content) {
     r = this.push(new Buffer([VERSION, type, 0x00, 0x00]));
   } else if (typeof content === 'string') {
     len = Buffer.byteLength(content);
-    while (i < len) {
-      if ((len - i) > MAX_LENGTH)
+    while (len) {
+      if (len > MAX_LENGTH)
         chlen = MAX_LENGTH;
       else
         chlen = len;
@@ -88,12 +88,13 @@ Protocol.prototype.send = function(type, content) {
       }
       r = this.push(buf);
       i += nb;
+      len -= nb;
     }
     r = this.push(BUF_TERM);
   } else if (Buffer.isBuffer(content)) {
     len = content.length;
-    while (i < len) {
-      if ((len - i) > MAX_LENGTH)
+    while (len) {
+      if (len > MAX_LENGTH)
         chlen = MAX_LENGTH;
       else
         chlen = len;
@@ -113,6 +114,7 @@ Protocol.prototype.send = function(type, content) {
       }
       r = this.push(buf);
       i += chlen;
+      len -= chlen;
     }
     r = this.push(BUF_TERM);
   } else
