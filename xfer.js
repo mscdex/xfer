@@ -20,9 +20,10 @@ var inherits = require('util').inherits,
     ReadableStream = require('stream').Readable,
     DuplexStream = require('stream').Duplex;
 
-var EMPTY_FN = function(n) {};
 var VERSION = 0x01,
-    MAX_LENGTH = Math.pow(256, 2) - 1;
+    MAX_LENGTH = Math.pow(256, 2) - 1,
+    BUF_TERM = new Buffer([0x00, 0x00]),
+    EMPTY_FN = function(n) {};
 
 function Protocol(opts) {
   if (!(this instanceof Protocol))
@@ -65,7 +66,7 @@ Protocol.prototype.send = function(type, content) {
 
   if (!content) {
     // no content -- useful for sending simple signals
-    r = this.push(bufTerm);
+    r = this.push(new Buffer([VERSION, type, 0x00, 0x00]));
   } else if (typeof content === 'string') {
     len = Buffer.byteLength(content);
     while (i < len) {
@@ -82,7 +83,7 @@ Protocol.prototype.send = function(type, content) {
       r = this.push(buf);
       i += nb;
     }
-    r = this.push(bufTerm);
+    r = this.push(BUF_TERM);
   } else if (Buffer.isBuffer(content)) {
     len = content.length;
     while (i < len) {
@@ -99,7 +100,7 @@ Protocol.prototype.send = function(type, content) {
       r = this.push(buf);
       i += chlen;
     }
-    r = this.push(bufTerm);
+    r = this.push(BUF_TERM);
   } else
     throw new Error('Invalid data type, must be false-y for no data, or string or Buffer');
 
