@@ -1,9 +1,11 @@
 var Protocol = require('../xfer');
 
-var inspect = require('util').inspect,
+var path = require('path'),
+    inspect = require('util').inspect,
     assert = require('assert');
 
-var t = 0;
+var t = 0,
+    group = path.basename(__filename, '.js') + '/';
 var tests = [
   { test: function(p) {
       var self = this, errors = [];
@@ -169,5 +171,5 @@ function next() {
 next();
 
 function makeMsg(what, msg) {
-  return '[' + what + ']: ' + msg;
+  return '[' + group + what + ']: ' + msg;
 }
