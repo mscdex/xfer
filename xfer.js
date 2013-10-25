@@ -122,7 +122,7 @@ var Xfer = module.exports = function(cfg) {
 inherits(Xfer, EventEmitter);
 
 Xfer.prototype.write = function(type, data) {
-  var len = 0, outBuf, p = this.typeBytes;
+  var len = 0, outBuf, p = this.typeBytes, i;
 
   if (data)
     len = (Buffer.isBuffer(data) ? data.length : Buffer.byteLength(data));
@@ -139,11 +139,11 @@ Xfer.prototype.write = function(type, data) {
   outBuf = new Buffer(this.typeBytes + this.sizeBytes + len);
 
   outBuf[this.typeBytes - 1] = type & 0xFF;
-  for (var i = 1; i < this.typeBytes; ++i)
+  for (i = 1; i < this.typeBytes; ++i)
     outBuf[this.typeBytes - 1 - i] = Math.floor(type / Math.pow(256, i)) & 0xFF;
 
   outBuf[p + (this.sizeBytes - 1)] = len & 0xFF;
-  for (var i = 1; i < this.sizeBytes; ++i)
+  for (i = 1; i < this.sizeBytes; ++i)
     outBuf[p + (this.sizeBytes - 1 - i)] = Math.floor(len / Math.pow(256, i)) & 0xFF;
 
   p += this.sizeBytes;
