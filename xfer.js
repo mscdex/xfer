@@ -60,9 +60,7 @@ function Protocol(opts) {
 inherits(Protocol, DuplexStream);
 
 Protocol.prototype.send = function(type, content) {
-  var buf, bufTerm, len = 0, chlen = 0, r = false, nb = 0, i = 0;
-
-  bufTerm = new Buffer([VERSION, type, 0, 0]);
+  var buf, len = 0, chlen = 0, first = true, r = false, nb = 0, i = 0;
 
   if (!content) {
     // no content -- useful for sending simple signals
@@ -74,12 +72,20 @@ Protocol.prototype.send = function(type, content) {
         chlen = MAX_LENGTH;
       else
         chlen = len;
-      buf = new Buffer(4 + chlen);
-      buf[0] = VERSION;
-      buf[1] = type;
-      buf[2] = chlen >>> 8;
-      buf[3] = (chlen & 0xFF);
-      nb = buf.write(content, 4);
+      if (first) {
+        first = false;
+        buf = new Buffer(4 + chlen);
+        buf[0] = VERSION;
+        buf[1] = type;
+        buf[2] = chlen >>> 8;
+        buf[3] = (chlen & 0xFF);
+        nb = buf.write(content.slice(i, i + chlen), 4);
+      } else {
+        buf = new Buffer(2 + chlen);
+        buf[0] = chlen >>> 8;
+        buf[1] = (chlen & 0xFF);
+        nb = buf.write(content.slice(i, i + chlen), 2);
+      }
       r = this.push(buf);
       i += nb;
     }
@@ -91,12 +97,20 @@ Protocol.prototype.send = function(type, content) {
         chlen = MAX_LENGTH;
       else
         chlen = len;
-      buf = new Buffer(4 + chlen);
-      buf[0] = VERSION;
-      buf[1] = type;
-      buf[2] = chlen >>> 8;
-      buf[3] = (chlen & 0xFF);
-      content.copy(buf, 4, i, i + chlen);
+      if (first) {
+        first = false;
+        buf = new Buffer(4 + chlen);
+        buf[0] = VERSION;
+        buf[1] = type;
+        buf[2] = chlen >>> 8;
+        buf[3] = (chlen & 0xFF);
+        content.copy(buf, 4, i, i + chlen);
+      } else {
+        buf = new Buffer(2 + chlen);
+        buf[0] = chlen >>> 8;
+        buf[1] = (chlen & 0xFF);
+        content.copy(buf, 2, i, i + chlen);
+      }
       r = this.push(buf);
       i += chlen;
     }
