@@ -1,162 +1,190 @@
-var STATE_NEED_TYPE = 0,
-    STATE_NEED_LEN = 1,
-    STATE_DATA = 2;
+/*
+
+  Header:
+
+    [1 byte]  Version number
+
+  Version 1:
+
+    [1 byte]  Payload type
+    1 or more of:
+      [2 bytes] Chunk length (unsigned, big endian)
+      [n bytes] Chunk data (chunk length bytes long)
+
+    A chunk length of 0 terminates the payload. Messages with no content are
+    permitted and may be useful to serve as a "signal."
+
+*/
 
 var inherits = require('util').inherits,
-    EventEmitter = require('events').EventEmitter,
-    Stream = require('stream');
+    ReadableStream = require('stream').Readable,
+    DuplexStream = require('stream').Duplex;
 
-function ValueStream(stream) {
-  this.readable = true;
-  this._stream = stream;
+var EMPTY_FN = function(n) {};
+var VERSION = 0x01,
+    MAX_LENGTH = Math.pow(256, 2) - 1;
+
+function Protocol(opts) {
+  if (!(this instanceof Protocol))
+    return new Protocol(opts);
+
+  var hwm;
+  if (opts && typeof opts.highWaterMark === 'number')
+    hwm = opts.highWaterMark;
+  else
+    hwm = 128 * 1024;
+  DuplexStream.call(this, { highWaterMark: hwm });
+
+  // Writable state variables
+  this.state = 'version';
+  this.stream = undefined;
+  this.streamHwm = (opts && opts.streamHWM) || hwm;
+  this.type = 0;
+  this.len = 0;
+  this.wildcards = 0;
+  this.invalid = false;
+
+  this.on('newListener', function(ev, listener) {
+    if (ev === '*')
+      ++this.wildcards;
+  });
+  this.on('removeListener', function(ev, listener) {
+    if (ev === '*')
+      --this.wildcards;
+  });
+
+  // Readable state variables
+  this.waiting = false;
 }
-inherits(ValueStream, Stream);
+inherits(Protocol, DuplexStream);
 
-ValueStream.prototype.setEncoding = function(encoding) {
-  this.encoding = encoding;
+Protocol.prototype.send = function(type, content) {
+  var buf, bufTerm, len = 0, chlen = 0, r = false, nb = 0, i = 0;
+
+  bufTerm = new Buffer([VERSION, type, 0, 0]);
+
+  if (!content) {
+    // no content -- useful for sending simple signals
+    r = this.push(bufTerm);
+  } else if (typeof content === 'string') {
+    len = Buffer.byteLength(content);
+    while (i < len) {
+      if ((len - i) > MAX_LENGTH)
+        chlen = MAX_LENGTH;
+      else
+        chlen = len;
+      buf = new Buffer(4 + chlen);
+      buf[0] = VERSION;
+      buf[1] = type;
+      buf[2] = chlen >>> 8;
+      buf[3] = (chlen & 0xFF);
+      nb = buf.write(content, 4);
+      r = this.push(buf);
+      i += nb;
+    }
+    r = this.push(bufTerm);
+  } else if (Buffer.isBuffer(content)) {
+    len = content.length;
+    while (i < len) {
+      if ((len - i) > MAX_LENGTH)
+        chlen = MAX_LENGTH;
+      else
+        chlen = len;
+      buf = new Buffer(4 + chlen);
+      buf[0] = VERSION;
+      buf[1] = type;
+      buf[2] = chlen >>> 8;
+      buf[3] = (chlen & 0xFF);
+      content.copy(buf, 4, i, i + chlen);
+      r = this.push(buf);
+      i += chlen;
+    }
+    r = this.push(bufTerm);
+  } else
+    throw new Error('Invalid data type, must be false-y for no data, or string or Buffer');
+
+  this.waiting = !r;
+
+  return r;
 };
 
-ValueStream.prototype.end = ValueStream.prototype.close = function() {
-  this.readable = false;
-};
-
-ValueStream.prototype.pause = function() {
-  this._stream.pause();
-};
-
-ValueStream.prototype.resume = function() {
-  this._stream.resume();
-};
-
-var Xfer = module.exports = function(cfg) {
-  cfg = cfg || {};
-  if (!cfg.stream)
-    throw new Error("No stream specified");
-  if (cfg.buffer === undefined)
-    cfg.buffer = true;
-  var self = this,
-      state = STATE_NEED_TYPE,
-      type,
-      nType = 0,
-      len,
-      nLen = 0,
-      recvd = 0,
-      source;
-  this.stream = cfg.stream;
-  this.isStreaming = !cfg.buffer;
-  this.isWriteOnly = cfg.writeOnly;
-  this.typeBytes = cfg.typeLen || 1;
-  this.sizeBytes = cfg.sizeLen || 2;
-  this.maxType = Math.pow(2, this.typeBytes * 8) - 1;
-  this.maxPayloadSize = Math.pow(2, this.sizeBytes * 8) - 1;
-  if (!this.isWriteOnly) {
-    this.stream.on('data', function parse(data) {
-      var i = 0, dataLen = data.length;
-      if (state === STATE_NEED_TYPE) {
-        source = len = undefined;
-        recvd = nLen = 0;
-        while (i < dataLen && nType < self.typeBytes) {
-          ++nType;
-          if (type === undefined)
-            type = data[i++];
-          else {
-            type *= 256;
-            type += data[i++];
-          }
-        }
-        if (nType === self.typeBytes)
-          state = STATE_NEED_LEN;
-      }
-      if (state === STATE_NEED_LEN) {
-        while (i < dataLen && nLen < self.sizeBytes) {
-          ++nLen;
-          if (len === undefined)
-            len = data[i++];
-          else {
-            len *= 256;
-            len += data[i++];
-          }
-        }
-        if (nLen === self.sizeBytes)
-          state = STATE_DATA;
-      }
-      if (state === STATE_DATA && i < dataLen) {
-        // message data
-        dataLen -= i;
-        if (!self.isStreaming && !source)
-          source = new Buffer(len);
-        var numBytes = (recvd + dataLen > len ? len - recvd : dataLen);
-        if (!self.isStreaming)
-          data.copy(source, recvd, i, i + numBytes);
-        else {
-          if (recvd === 0) {
-            source = new ValueStream(self.stream);
-            self.emit(type, source, len);
-            self.emit('message', type, source, len);
-          }
-          if (source.readable) {
-            var chunk = data.slice(i, i + numBytes);
-            source.emit('data', source.encoding ? chunk.toString(source.encoding) : chunk);
-          }
-        }
-        recvd += numBytes;
-        if (recvd === len) {
-          var actualType = type;
-          state = STATE_NEED_TYPE;
-          type = undefined;
-          nType = 0;
-          if (!self.isStreaming) {
-            self.emit(actualType, source, len);
-            self.emit('message', actualType, source, len);
-          } else
-            source.emit('end');
-        }
-        if (numBytes !== dataLen) {
-          // extra data in the pipeline
-          parse(data.slice(i + numBytes));
-        }
-      }
-    });
+Protocol.prototype._read = function(n) {
+  if (this.waiting) {
+    this.waiting = false;
+    this.emit('ready');
   }
 };
-inherits(Xfer, EventEmitter);
+Protocol.prototype._write = function(chunk, encoding, cb) {
+  if (this.invalid)
+    return;
 
-Xfer.prototype.write = function(type, data) {
-  var len = 0, outBuf, p = this.typeBytes, i;
+  var i = 0, len = chunk.length, state = this.state, chleft, stream, r;
 
-  if (data)
-    len = (Buffer.isBuffer(data) ? data.length : Buffer.byteLength(data));
+  while (i < len) {
+    if (state === 'data') {
+      chleft = len - i;
+      if (this.len >= chleft) {
+        if (i === 0)
+          r = this.stream.push(chunk);
+        else
+          r = this.stream.push(chunk.slice(i));
+        this.len -= chleft;
+        i = len;
+      } else if (this.len < chleft) {
+        r = this.stream.push(chunk.slice(i, i + this.len));
+        i += this.len;
+        this.len = 0;
+      }
+      if (this.len === 0)
+        state = 'length1';
+      else if (r)
+        this.stream._read = EMPTY_FN;
+      else {
+        this.stream._read = function(n) { cb(); };
+        return;
+      }
+      continue;
+    } else if (state === 'length1' || state === 'length2') {
+      this.len <<= 8;
+      this.len += chunk[i];
+      if (state === 'length1')
+        state = 'length2';
+      else if (this.len === 0) {
+        if (this.stream) {
+          stream = this.stream;
+          this.stream = undefined;
+          stream.push(null);
+        } else {
+          this.emit(this.type);
+          if (this.wildcards)
+            this.emit('*', this.type);
+        }
+        state = 'version';
+      } else {
+        if (!this.stream) {
+          this.stream = new ReadableStream({ highWaterMark: this.streamHWM });
+          this.stream._read = EMPTY_FN;
+          this.emit(this.type, this.stream);
+          if (this.wildcards)
+            this.emit('*', this.type, this.stream);
+        }
+        state = 'data';
+      }
+    } else if (state === 'version') {
+      if (chunk[i] !== VERSION) {
+        this.invalid = true;
+        return cb(new Error('Invalid protocol version: ' + chunk[i]));
+      }
+      state = 'type';
+    } else if (state === 'type') {
+      this.type = chunk[i];
+      state = 'length1';
+    }
+    ++i;
+  }
 
-  if (data && len > this.maxPayloadSize)
-    throw new Error('Cannot write data (' + data.length +
-                    ' bytes) larger than max allowed size of ' +
-                    this.maxPayloadSize + ' bytes');
-  else if (!this.stream.writable)
-    throw new Error('Cannot write data: stream is no longer writable');
-  else if (typeof type !== 'number' || type < 0 || type > this.maxType)
-    throw new Error('Message type must be a number between 0 and ' + this.maxType);
-
-  outBuf = new Buffer(this.typeBytes + this.sizeBytes + len);
-
-  outBuf[this.typeBytes - 1] = type & 0xFF;
-  for (i = 1; i < this.typeBytes; ++i)
-    outBuf[this.typeBytes - 1 - i] = Math.floor(type / Math.pow(256, i)) & 0xFF;
-
-  outBuf[p + (this.sizeBytes - 1)] = len & 0xFF;
-  for (i = 1; i < this.sizeBytes; ++i)
-    outBuf[p + (this.sizeBytes - 1 - i)] = Math.floor(len / Math.pow(256, i)) & 0xFF;
-
-  p += this.sizeBytes;
-
-  if (len)
-    (Buffer.isBuffer(data) ? data : new Buffer(data)).copy(outBuf, p);
-  this.stream.write(outBuf);
+  this.state = state;
+  cb();
 };
 
-Xfer.prototype.pause = function() {
-  this.stream.pause();
-};
-
-Xfer.prototype.resume = function() {
-  this.stream.resume();
-};
+module.exports = Protocol;
