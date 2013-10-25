@@ -25,7 +25,8 @@ var tests = [
         assert(stream === undefined, makeMsg(self, 'Stream is set'));
         ++count;
       });
-      p.write(new Buffer([0x01, 0x00, 0x00, 0x00]));
+      p.write(new Buffer([0x01, 0x00,
+                          0x00, 0x00]));
       assert(count === 1, makeMsg(self, 'Wrong event count'));
     },
     what: 'Empty payload, single write'
@@ -43,7 +44,9 @@ var tests = [
           assert(buf === 'ABC', makeMsg(self, 'Data mismatch'));
         });
       });
-      p.write(new Buffer([0x01, 0x00, 0x00, 0x03, 0x41, 0x42, 0x43, 0x00, 0x00]));
+      p.write(new Buffer([0x01, 0x00,
+                          0x00, 0x03, 0x41, 0x42, 0x43,
+                          0x00, 0x00]));
       setImmediate(function() {
         assert(count === 1, makeMsg(self, 'Wrong event count'));
         assert(sawEnd, makeMsg(self, 'Did not see end of data'));
@@ -65,7 +68,9 @@ var tests = [
           assert(buf === 'ABC', makeMsg(self, 'Data mismatch'));
         });
       });
-      var data = new Buffer([0x01, 0x00, 0x00, 0x03, 0x41, 0x42, 0x43, 0x00, 0x00]);
+      var data = new Buffer([0x01, 0x00,
+                             0x00, 0x03, 0x41, 0x42, 0x43,
+                             0x00, 0x00]);
       p.write(data.slice(0, 1));
       p.write(data.slice(1, 2));
       p.write(data.slice(2, 3));
