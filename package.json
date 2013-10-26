@@ -2,7 +2,7 @@
   "version": "0.2.0",
   "author": "Brian White <mscdex@mscdex.net>",
   "description": "A simple, general purpose, TLV-like binary protocol",
-  "main": "./xfer",
+  "main": "./lib/main",
   "scripts": {
     "test": "node test/test.js"
   },
