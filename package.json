@@ -1,5 +1,5 @@
 { "name": "xfer",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "author": "Brian White <mscdex@mscdex.net>",
   "description": "A simple, general purpose, TLV-like binary protocol",
   "main": "./lib/main",
