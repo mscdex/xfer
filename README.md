@@ -97,4 +97,6 @@ Xfer Methods
 
     * **streamHWM** - _integer_ - The high water mark (in bytes) used for the data streams for inbound messages (default: `highWaterMark` value from above)
 
+    * **skipWriteTick** - _boolean_ - This disables the use of process.nextTick() inside node core's Writable stream class after data is written to this xfer instance. This can help prevent exceeding the maximum call stack if you run into that issue. (default: false)
+
  * **send** (< _integer_ >type[, < _mixed_ >data]) - _boolean_ - Writes the message to the Readable stream portion of the Xfer instance. If provided, `data` can be either a Buffer or string. The return value indicates whether or not more sends should be performed.
