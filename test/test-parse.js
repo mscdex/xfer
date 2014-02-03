@@ -1,4 +1,4 @@
-var Protocol = require('../xfer');
+var Protocol = require('../lib/main');
 
 var path = require('path'),
     inspect = require('util').inspect,
